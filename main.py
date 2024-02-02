@@ -21,17 +21,19 @@ def index():
 def Signin():
  return render_template("signin.html.jinja")
 
-@app.route('/signup')
+
+@app.route('/signup', methods=['GET', 'POST'])
 def Signup():
  if request.method == 'POST':
     Username = request.form["Username"]
     Password = request.form["Password"]
-    name = request.form["name"]
+    Name = request.form["Name"]
+    User_Bio = request.form["User_Bio"]
     Pronouns = request.form["Pronouns"]
     Birthday = request.form["Birthday"]
     Email = request.form["Email"]
     cursor =conn.cursor()
-    cursor.execute(f"INSERT INTO `User` (`Username`,`Password`,`Name`,`Pronouns`,`User_Bio`,`Birthday`,`Email`) VALUES ('{Username}','{Password}','{name}'','{Pronouns}','{Birthday}','{Email}')")
+    cursor.execute(f"INSERT INTO `Users` (`Username`,`Password`,`Name`,`Pronouns`,`User_Bio`,`Birthday`,`Email`) VALUES ('{Username}','{Password}','{Name}','{User_Bio}','{Pronouns}','{Birthday}','{Email}')")
     cursor.close()
     conn.commit()
  return render_template("signup.html.jinja")
