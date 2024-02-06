@@ -1,6 +1,6 @@
 import pymysql
 from flask import Flask
-from flask import Flask, render_template
+from flask import Flask, render_template,redirect
 from flask import request 
 import pymysql
 
@@ -19,6 +19,17 @@ def index():
 
 @app.route('/signin')
 def Signin():
+ if request.method == 'POST':
+    Username = request.form["Username"]
+    Password = request.form["Password"]
+    cursor =conn.cursor()
+    cursor.execute(f"SELECT * FROM `Users` WHERE `Username` = '{Username}'")   
+    User = cursor.fetchcone()
+    {User['Password']}
+    if Password == User["password"]:
+        return redirect('/feed')
+
+    
  return render_template("signin.html.jinja")
 
 
@@ -36,6 +47,7 @@ def Signup():
     cursor.execute(f"INSERT INTO `Users` (`Username`,`Password`,`Name`,`Pronouns`,`User_Bio`,`Birthday`,`Email`) VALUES ('{Username}','{Password}','{Name}','{User_Bio}','{Pronouns}','{Birthday}','{Email}')")
     cursor.close()
     conn.commit()
+    return redirect("/Signin")
  return render_template("signup.html.jinja")
 
 
