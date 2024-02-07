@@ -3,8 +3,33 @@ from flask import Flask
 from flask import Flask, render_template,redirect
 from flask import request 
 import pymysql
+import flask_login
 
 app = Flask(__name__)
+app.secret_key = "nugget_secret_recipe" #change this
+login_manager = flask_login.LoginManager()
+login_manager.init_app(app)
+
+class User:
+    is_authenticated = True
+    is_anonymous = False
+    is_active= True
+    def __init__(self,id,username):
+        self.username = username
+        self.id = id
+    def get_id(self):
+        return str(self.id)
+
+@login_manager.user_loader
+def load_user(user_id):
+   cursor = conn.cursor()
+   cursor.execute("SELECT * FROM 'Users` WHERE `id` ='{user_id}'")
+   result = cursor.fetchone()
+   cursor.close()
+   conn.commit()
+   if result is None:
+    return None
+   return User(result["Id"],result["username"])
 conn = pymysql.connect(
     database ='sjamesjr_thenewplace',
     user='sjamesjr',
@@ -17,16 +42,18 @@ conn = pymysql.connect(
 def index():
  return render_template("index.html.jinja")
 
-@app.route('/signin')
+@app.route('/signin',methods =['GET','POST'])
 def Signin():
  if request.method == 'POST':
     Username = request.form["Username"]
     Password = request.form["Password"]
     cursor =conn.cursor()
     cursor.execute(f"SELECT * FROM `Users` WHERE `Username` = '{Username}'")   
-    User = cursor.fetchcone()
+    User = cursor.fetchone()
     {User['Password']}
-    if Password == User["password"]:
+    if Password == User["Password"]:
+        user =load_user(User['ID'])
+        flask_login.login_user(user)
         return redirect('/feed')
 
     
@@ -50,4 +77,8 @@ def Signup():
     return redirect("/Signin")
  return render_template("signup.html.jinja")
 
+@app.route('/feed')
+@flask_login.login_required
+def post_feed():
+   return 'feed page'
 
