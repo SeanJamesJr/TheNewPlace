@@ -23,13 +23,13 @@ class User:
 @login_manager.user_loader
 def load_user(user_id):
    cursor = conn.cursor()
-   cursor.execute("SELECT * FROM 'Users` WHERE `id` ='{user_id}'")
+   cursor.execute(f"SELECT * FROM `Users` WHERE `id` = {user_id}")
    result = cursor.fetchone()
    cursor.close()
    conn.commit()
    if result is None:
     return None
-   return User(result["Id"],result["username"])
+   return User(result["ID"], result["Username"])
 conn = pymysql.connect(
     database ='sjamesjr_thenewplace',
     user='sjamesjr',
@@ -40,7 +40,10 @@ conn = pymysql.connect(
 
 @app.route('/')
 def index():
- return render_template("index.html.jinja")
+  if flask_login.current_user.is_authenticated:
+     return redirect('/feed')
+  
+  return render_template("index.html.jinja")
 
 @app.route('/signin',methods =['GET','POST'])
 def Signin():
@@ -80,5 +83,5 @@ def Signup():
 @app.route('/feed')
 @flask_login.login_required
 def post_feed():
-   return 'feed page'
+   return flask_login.current_user.username
 
