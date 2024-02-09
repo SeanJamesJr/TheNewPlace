@@ -83,5 +83,9 @@ def Signup():
 @app.route('/feed')
 @flask_login.login_required
 def post_feed():
-   return flask_login.current_user.username
-
+    cursor = conn.cursor()
+    cursor.execute('SELECT * from `Post` ORDER BY `Timestamp`')
+    results = cursor.fetchall()
+    cursor.close()
+    return render_template("feed.html.jinja",post_list=results)
+  
