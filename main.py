@@ -4,6 +4,7 @@ from flask import Flask, render_template,redirect
 from flask import request 
 import pymysql
 import flask_login
+from flask import g
 
 app = Flask(__name__)
 app.secret_key = "nugget_secret_recipe" #change this
@@ -22,21 +23,36 @@ class User:
 
 @login_manager.user_loader
 def load_user(user_id):
-   cursor = conn.cursor()
+   cursor = get_db().cursor()
    cursor.execute(f"SELECT * FROM `Users` WHERE `id` = {user_id}")
    result = cursor.fetchone()
    cursor.close()
-   conn.commit()
+   get_db().commit()
    if result is None:
     return None
    return User(result["ID"], result["Username"])
-conn = pymysql.connect(
-    database ='sjamesjr_thenewplace',
-    user='sjamesjr',
-    password='250415031',
-    host='10.100.33.60',
-    cursorclass=pymysql.cursors.DictCursor
-)
+
+
+def connect_db():
+    return pymysql.connect(
+        host="10.100.33.60",
+        user="sjamesjr",
+        password="250415031",
+        database="sjamesjr_thenewplace",
+        cursorclass=pymysql.cursors.DictCursor,
+        autocommit=True
+    )
+def get_db():
+    '''Opens a new database connection per request.'''        
+    if not hasattr(g, 'db'):
+        g.db = connect_db()
+    return g.db    
+
+@app.teardown_appcontext
+def close_db(error):
+    '''Closes the database connection at the end of request.'''    
+    if hasattr(g, 'db'):
+        g.db.close() 
 
 @app.route('/')
 def index():
@@ -50,7 +66,7 @@ def Signin():
  if request.method == 'POST':
     Username = request.form["Username"]
     Password = request.form["Password"]
-    cursor =conn.cursor()
+    cursor =get_db().cursor()
     cursor.execute(f"SELECT * FROM `Users` WHERE `Username` = '{Username}'")   
     User = cursor.fetchone()
     {User['Password']}
@@ -73,19 +89,28 @@ def Signup():
     Pronouns = request.form["Pronouns"]
     Birthday = request.form["Birthday"]
     Email = request.form["Email"]
-    cursor =conn.cursor()
+    cursor =get_db().cursor()
     cursor.execute(f"INSERT INTO `Users` (`Username`,`Password`,`Name`,`Pronouns`,`User_Bio`,`Birthday`,`Email`) VALUES ('{Username}','{Password}','{Name}','{User_Bio}','{Pronouns}','{Birthday}','{Email}')")
     cursor.close()
-    conn.commit()
+    get_db().commit()
     return redirect("/Signin")
  return render_template("signup.html.jinja")
 
 @app.route('/feed')
 @flask_login.login_required
 def post_feed():
-    cursor = conn.cursor()
+    cursor = get_db().cursor()
     cursor.execute('SELECT * from `Post` ORDER BY `Timestamp`')
     results = cursor.fetchall()
     cursor.close()
     return render_template("feed.html.jinja",post_list=results)
   
+
+@app.route('/post', methods = ['POST'])
+@flask_login.login_required
+def create_post():
+    Description = request.form['Description']
+    UserID = flask_login.current_user.id
+    cursor = get_db().cursor()
+    cursor.execute(f"INSERT INTO `Post` (`Description`,`UserID`) VALUES ('{Description}','{UserID}')")
+    return redirect("/feed")
